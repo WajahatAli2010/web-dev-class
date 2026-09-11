@@ -40,7 +40,17 @@ export default function Page() {
 
     if (res.ok) {
       setName('');
-      fetchMessages(); // Refresh the list automatically after saving
+      fetchMessages();
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    const res = await fetch(`/api/message?id=${id}`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) {
+      fetchMessages();
     }
   };
 
@@ -62,7 +72,10 @@ export default function Page() {
       <h3>Saved Names</h3>
       <ul>
         {messages.map((item) => (
-          <li key={item.id}>{item.name}</li>
+          <li key={item.id} style={{ marginBottom: '8px' }}>
+            <span>{item.name}</span>{' '}
+            <button onClick={() => handleDelete(item.id)}>Delete</button>
+          </li>
         ))}
       </ul>
     </div>
