@@ -2,41 +2,69 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import sql from '@/lib/db';
 
-// Helper to extract authenticated user ID from cookies
 async function getAuthUserId() {
   const cookieStore = await cookies();
   return cookieStore.get('userId')?.value;
 }
 
-// GET: Fetch all posts with author details
+// GET: Fetch posts visible to the authenticated user
 export async function GET() {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const currentUserId = Number(userId);
+
     const posts = await sql`
-      SELECT posts.id, posts.title, posts.content, posts.user_id, posts.created_at, users.name as author_name 
+      SELECT 
+        posts.id, 
+        posts.title, 
+        posts.content, 
+        posts.user_id, 
+        posts.visibility,
+        posts.created_at, 
+        users.name as author_name 
       FROM posts 
       JOIN users ON posts.user_id = users.id 
+      WHERE 
+        posts.user_id = ${currentUserId}
+        OR posts.visibility = 'everyone'
+        OR (
+          posts.visibility = 'friends' 
+          AND EXISTS (
+            SELECT 1 FROM friendships 
+            WHERE status = 'accepted' 
+            AND (
+              (sender_id = ${currentUserId} AND receiver_id = posts.user_id)
+              OR (receiver_id = ${currentUserId} AND sender_id = posts.user_id)
+            )
+          )
+        )
       ORDER BY posts.created_at DESC
     `;
+
     return NextResponse.json(posts, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 });
   }
 }
 
-// POST: Create a new post
+// POST: Create a post with visibility setting
 export async function POST(request: Request) {
   try {
     const userId = await getAuthUserId();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { title, content } = await request.json();
+    const { title, content, visibility } = await request.json();
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 });
     }
 
+    const postVisibility = visibility || 'everyone';
+
     await sql`
-      INSERT INTO posts (title, content, user_id) 
-      VALUES (${title}, ${content}, ${Number(userId)})
+      INSERT INTO posts (title, content, user_id, visibility) 
+      VALUES (${title}, ${content}, ${Number(userId)}, ${postVisibility})
     `;
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
@@ -44,17 +72,17 @@ export async function POST(request: Request) {
   }
 }
 
-// PUT: Edit a post (Only if owned by the current user)
+// PUT: Edit post details and visibility (Owner Only)
 export async function PUT(request: Request) {
   try {
     const userId = await getAuthUserId();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { id, title, content } = await request.json();
+    const { id, title, content, visibility } = await request.json();
 
     const result = await sql`
       UPDATE posts 
-      SET title = ${title}, content = ${content} 
+      SET title = ${title}, content = ${content}, visibility = ${visibility || 'everyone'}
       WHERE id = ${id} AND user_id = ${Number(userId)}
       RETURNING id
     `;
@@ -69,7 +97,7 @@ export async function PUT(request: Request) {
   }
 }
 
-// DELETE: Remove a post (Only if owned by the current user)
+// DELETE: Remove post (Owner Only)
 export async function DELETE(request: Request) {
   try {
     const userId = await getAuthUserId();

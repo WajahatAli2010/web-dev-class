@@ -2,20 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Post, Comment } from './types';
+import { User, Post, Comment, UserWithFriendStatus, PostVisibility } from './types';
 import DashboardHeader from './components/DashboardHeader';
 import PostForm from './components/PostForm';
 import PostItem from './components/PostItem';
+import FriendsSidebar from './components/FriendsSidebar';
 
 export default function DashboardPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [users, setUsers] = useState<UserWithFriendStatus[]>([]);
 
   // Form State
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [visibility, setVisibility] = useState<PostVisibility>('everyone');
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
 
   const loadData = async () => {
@@ -25,13 +28,15 @@ export default function DashboardPage() {
       const userData = await userRes.json();
       setCurrentUser(userData.user);
 
-      const [postsRes, commentsRes] = await Promise.all([
+      const [postsRes, commentsRes, friendsRes] = await Promise.all([
         fetch('/api/posts'),
         fetch('/api/comments'),
+        fetch('/api/friends'),
       ]);
 
       setPosts(await postsRes.json());
       setComments(await commentsRes.json());
+      setUsers(await friendsRes.json());
     } catch {
       router.push('/');
     }
@@ -50,19 +55,20 @@ export default function DashboardPage() {
       await fetch('/api/posts', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editingPostId, title, content }),
+        body: JSON.stringify({ id: editingPostId, title, content, visibility }),
       });
       setEditingPostId(null);
     } else {
       await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content }),
+        body: JSON.stringify({ title, content, visibility }),
       });
     }
 
     setTitle('');
     setContent('');
+    setVisibility('everyone');
     loadData();
   };
 
@@ -97,6 +103,30 @@ export default function DashboardPage() {
     loadData();
   };
 
+  // Friend Actions
+  const handleSendFriendRequest = async (receiverId: number) => {
+    await fetch('/api/friends', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ receiverId }),
+    });
+    loadData();
+  };
+
+  const handleAcceptFriendRequest = async (friendshipId: number) => {
+    await fetch('/api/friends', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendshipId }),
+    });
+    loadData();
+  };
+
+  const handleRemoveFriendship = async (friendshipId: number) => {
+    await fetch(`/api/friends?id=${friendshipId}`, { method: 'DELETE' });
+    loadData();
+  };
+
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
     router.push('/');
@@ -105,37 +135,56 @@ export default function DashboardPage() {
   if (!currentUser) return <p className="text-center mt-10">Loading...</p>;
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-4 md:p-6">
       <DashboardHeader user={currentUser} onLogout={handleLogout} />
 
-      <PostForm 
-        title={title}
-        content={content}
-        isEditing={Boolean(editingPostId)}
-        setTitle={setTitle}
-        setContent={setContent}
-        onSubmit={handleSavePost}
-        onCancel={() => { setEditingPostId(null); setTitle(''); setContent(''); }}
-      />
+      <div className="flex flex-col lg:flex-row gap-6">
+        <FriendsSidebar
+          users={users}
+          onSendRequest={handleSendFriendRequest}
+          onAcceptRequest={handleAcceptFriendRequest}
+          onRemoveFriendship={handleRemoveFriendship}
+        />
 
-      <div className="space-y-6">
-        {posts.map((post) => (
-          <PostItem 
-            key={post.id}
-            post={post}
-            currentUserId={currentUser.id}
-            comments={comments.filter((c) => c.post_id === post.id)}
-            onStartEdit={(p) => {
-              setEditingPostId(p.id);
-              setTitle(p.title);
-              setContent(p.content);
+        <main className="flex-1">
+          <PostForm
+            title={title}
+            content={content}
+            visibility={visibility}
+            isEditing={Boolean(editingPostId)}
+            setTitle={setTitle}
+            setContent={setContent}
+            setVisibility={setVisibility}
+            onSubmit={handleSavePost}
+            onCancel={() => {
+              setEditingPostId(null);
+              setTitle('');
+              setContent('');
+              setVisibility('everyone');
             }}
-            onDeletePost={handleDeletePost}
-            onAddComment={handleAddComment}
-            onUpdateComment={handleUpdateComment}
-            onDeleteComment={handleDeleteComment}
           />
-        ))}
+
+          <div className="space-y-6">
+            {posts.map((post) => (
+              <PostItem
+                key={post.id}
+                post={post}
+                currentUserId={currentUser.id}
+                comments={comments.filter((c) => c.post_id === post.id)}
+                onStartEdit={(p) => {
+                  setEditingPostId(p.id);
+                  setTitle(p.title);
+                  setContent(p.content);
+                  setVisibility(p.visibility || 'everyone');
+                }}
+                onDeletePost={handleDeletePost}
+                onAddComment={handleAddComment}
+                onUpdateComment={handleUpdateComment}
+                onDeleteComment={handleDeleteComment}
+              />
+            ))}
+          </div>
+        </main>
       </div>
     </div>
   );

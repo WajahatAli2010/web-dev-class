@@ -1,11 +1,15 @@
 'use client';
 
+import { PostVisibility } from '../types';
+
 interface Props {
   title: string;
   content: string;
+  visibility: PostVisibility;
   isEditing: boolean;
   setTitle: (val: string) => void;
   setContent: (val: string) => void;
+  setVisibility: (val: PostVisibility) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
 }
@@ -13,15 +17,35 @@ interface Props {
 export default function PostForm({
   title,
   content,
+  visibility,
   isEditing,
   setTitle,
   setContent,
+  setVisibility,
   onSubmit,
   onCancel,
 }: Props) {
   return (
     <form onSubmit={onSubmit} className="p-4 rounded-lg border mb-8 flex flex-col gap-3 ">
-      <h2 className="font-semibold">{isEditing ? 'Edit Post' : 'Create a Post'}</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="font-semibold">{isEditing ? 'Edit Post' : 'Create a Post'}</h2>
+        
+        {/* Visibility Selector */}
+        <div className="flex items-center gap-1.5 text-xs text-gray-600">
+          <label htmlFor="visibility-select" className="font-medium">Who can see this?</label>
+          <select
+            id="visibility-select"
+            value={visibility}
+            onChange={(e) => setVisibility(e.target.value as PostVisibility)}
+            className="p-1 border rounded bg-white text-xs"
+          >
+            <option value="everyone">🌐 Everyone</option>
+            <option value="friends">👥 Friends Only</option>
+            <option value="no_one">🔒 Only Me</option>
+          </select>
+        </div>
+      </div>
+
       <input 
         type="text" 
         placeholder="Title" 

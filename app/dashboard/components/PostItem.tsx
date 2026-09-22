@@ -1,6 +1,6 @@
 'use client';
 
-import { Post, Comment } from '../types';
+import { Post, Comment, PostVisibility } from '../types';
 import CommentSection from './CommentSection';
 
 interface Props {
@@ -13,6 +13,12 @@ interface Props {
   onUpdateComment: (commentId: number, content: string) => void;
   onDeleteComment: (commentId: number) => void;
 }
+
+const visibilityLabels: Record<PostVisibility, string> = {
+  everyone: '🌐 Everyone',
+  friends: '👥 Friends',
+  no_one: '🔒 Only Me',
+};
 
 export default function PostItem({
   post,
@@ -32,7 +38,13 @@ export default function PostItem({
       <div className="flex justify-between items-start mb-2">
         <div>
           <h3 className="font-bold text-lg">{post.title}</h3>
-          <span className="text-xs text-gray-500">By {post.author_name}</span>
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span>By {post.author_name}</span>
+            <span>•</span>
+            <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[11px]">
+              {visibilityLabels[post.visibility || 'everyone']}
+            </span>
+          </div>
         </div>
 
         {isPostOwner && (
