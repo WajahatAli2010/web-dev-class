@@ -7,7 +7,7 @@ async function getAuthUserId() {
   return cookieStore.get('userId')?.value;
 }
 
-// GET: Fetch posts visible to the authenticated user
+// GET: Fetch posts with visibility logic, total like count, and user liked status
 export async function GET() {
   try {
     const userId = await getAuthUserId();
@@ -23,9 +23,15 @@ export async function GET() {
         posts.user_id, 
         posts.visibility,
         posts.created_at, 
-        users.name as author_name 
+        users.name as author_name,
+        COUNT(DISTINCT likes.id)::int as like_count,
+        EXISTS(
+          SELECT 1 FROM likes 
+          WHERE likes.post_id = posts.id AND likes.user_id = ${currentUserId}
+        ) as has_liked
       FROM posts 
       JOIN users ON posts.user_id = users.id 
+      LEFT JOIN likes ON posts.id = likes.post_id
       WHERE 
         posts.user_id = ${currentUserId}
         OR posts.visibility = 'everyone'
@@ -40,6 +46,7 @@ export async function GET() {
             )
           )
         )
+      GROUP BY posts.id, users.name
       ORDER BY posts.created_at DESC
     `;
 
@@ -60,11 +67,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 });
     }
 
-    const postVisibility = visibility || 'everyone';
-
     await sql`
       INSERT INTO posts (title, content, user_id, visibility) 
-      VALUES (${title}, ${content}, ${Number(userId)}, ${postVisibility})
+      VALUES (${title}, ${content}, ${Number(userId)}, ${visibility || 'everyone'})
     `;
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {

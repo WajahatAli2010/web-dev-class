@@ -78,6 +78,16 @@ export default function DashboardPage() {
     loadData();
   };
 
+  // Like Action
+  const handleToggleLike = async (postId: number) => {
+    await fetch('/api/likes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ postId }),
+    });
+    loadData();
+  };
+
   // Comment Actions
   const handleAddComment = async (postId: number, contentText: string) => {
     await fetch('/api/comments', {
@@ -178,6 +188,7 @@ export default function DashboardPage() {
                   setVisibility(p.visibility || 'everyone');
                 }}
                 onDeletePost={handleDeletePost}
+                onToggleLike={handleToggleLike}
                 onAddComment={handleAddComment}
                 onUpdateComment={handleUpdateComment}
                 onDeleteComment={handleDeleteComment}

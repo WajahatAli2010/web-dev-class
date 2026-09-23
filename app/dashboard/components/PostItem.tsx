@@ -9,6 +9,7 @@ interface Props {
   comments: Comment[];
   onStartEdit: (post: Post) => void;
   onDeletePost: (postId: number) => void;
+  onToggleLike: (postId: number) => void;
   onAddComment: (postId: number, content: string) => void;
   onUpdateComment: (commentId: number, content: string) => void;
   onDeleteComment: (commentId: number) => void;
@@ -26,6 +27,7 @@ export default function PostItem({
   comments,
   onStartEdit,
   onDeletePost,
+  onToggleLike,
   onAddComment,
   onUpdateComment,
   onDeleteComment,
@@ -61,6 +63,21 @@ export default function PostItem({
 
       {/* Body */}
       <p className="text-gray-700 mb-4 whitespace-pre-wrap">{post.content}</p>
+
+      {/* Action Bar (Like Button) */}
+      <div className="flex items-center gap-4 mb-3 border-t pt-2 border-b pb-2 text-xs">
+        <button
+          onClick={() => onToggleLike(post.id)}
+          className={`flex items-center gap-1.5 font-medium px-2.5 py-1 rounded transition-colors ${
+            post.has_liked
+              ? 'bg-red-50 text-red-600 hover:bg-red-100'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <span>{post.has_liked ? '❤️' : '🤍'}</span>
+          <span>{post.like_count || 0} {post.like_count === 1 ? 'Like' : 'Likes'}</span>
+        </button>
+      </div>
 
       {/* Embedded Comments */}
       <CommentSection 

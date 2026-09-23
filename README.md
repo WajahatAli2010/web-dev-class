@@ -44,3 +44,14 @@ CREATE TABLE IF NOT EXISTS friendships (
 ALTER TABLE posts 
 ADD COLUMN IF NOT EXISTS visibility VARCHAR(20) NOT NULL DEFAULT 'everyone';
 ```
+
+
+```bash
+CREATE TABLE IF NOT EXISTS likes (
+  id SERIAL PRIMARY KEY,
+  post_id INT REFERENCES posts(id) ON DELETE CASCADE,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT unique_user_post_like UNIQUE (post_id, user_id)
+);
+```

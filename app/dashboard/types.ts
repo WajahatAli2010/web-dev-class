@@ -24,6 +24,8 @@ export interface Post {
   author_name: string;
   created_at: string;
   visibility: PostVisibility;
+  like_count: number;
+  has_liked: boolean;
 }
 
 export interface Comment {
