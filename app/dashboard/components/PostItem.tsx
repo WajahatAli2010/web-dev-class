@@ -100,7 +100,7 @@ export default function PostItem({
         >
           {/* Reaction Picker Popover */}
           {showPicker && (
-            <div className="absolute bottom-full left-0 mb-1 flex items-center gap-1 bg-white border shadow-lg rounded-full px-2 py-1 z-20 animate-in fade-in slide-in-from-bottom-2 duration-150">
+            <div className="absolute bottom-full left-0 flex items-center gap-1 bg-white border shadow-lg rounded-full px-2 py-1 z-20 animate-in fade-in slide-in-from-bottom-2 duration-150">
               {reactionKeys.map((key) => (
                 <button
                   key={key}
