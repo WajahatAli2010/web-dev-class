@@ -62,3 +62,7 @@ ALTER TABLE likes
 ADD COLUMN IF NOT EXISTS reaction_type VARCHAR(20) NOT NULL DEFAULT 'like';
 ```
 
+
+```bash
+git pull origin main
+```
