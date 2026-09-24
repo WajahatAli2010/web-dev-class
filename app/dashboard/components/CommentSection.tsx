@@ -12,6 +12,7 @@ interface Props {
   onAddComment: (postId: number, content: string) => void;
   onUpdateComment: (commentId: number, content: string) => void;
   onDeleteComment: (commentId: number) => void;
+  onRefreshComments?: () => void;
 }
 
 export default function CommentSection({
@@ -22,6 +23,7 @@ export default function CommentSection({
   onAddComment,
   onUpdateComment,
   onDeleteComment,
+  onRefreshComments,
 }: Props) {
   const [inputText, setInputText] = useState('');
 
@@ -45,6 +47,7 @@ export default function CommentSection({
             isPostOwner={postOwnerId === currentUserId}
             onUpdate={onUpdateComment}
             onDelete={onDeleteComment}
+            onRefreshComments={onRefreshComments}
           />
         ))}
       </div>

@@ -7,9 +7,12 @@ async function getAuthUserId() {
   return cookieStore.get('userId')?.value;
 }
 
-// GET: Fetch all comments with author names
+// GET: Fetch all comments with author names, reaction count, and user reaction
 export async function GET() {
   try {
+    const userId = await getAuthUserId();
+    const currentUserId = userId ? Number(userId) : null;
+
     const comments = await sql`
       SELECT 
         comments.id, 
@@ -17,9 +20,18 @@ export async function GET() {
         comments.user_id, 
         comments.content, 
         comments.created_at, 
-        users.name as author_name
+        users.name as author_name,
+        COUNT(DISTINCT comment_reactions.id)::int as reaction_count,
+        (
+          SELECT reaction_type FROM comment_reactions 
+          WHERE comment_reactions.comment_id = comments.id 
+            AND comment_reactions.user_id = ${currentUserId}
+          LIMIT 1
+        ) as user_reaction
       FROM comments
       JOIN users ON comments.user_id = users.id
+      LEFT JOIN comment_reactions ON comments.id = comment_reactions.comment_id
+      GROUP BY comments.id, users.name
       ORDER BY comments.created_at ASC
     `;
     return NextResponse.json(comments, { status: 200 });
