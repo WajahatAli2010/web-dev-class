@@ -7,7 +7,7 @@ async function getAuthUserId() {
   return cookieStore.get('userId')?.value;
 }
 
-// GET: Fetch posts with visibility logic, total like count, and user liked status
+// GET: Fetch posts with visibility logic, total reaction count, and user reaction type
 export async function GET() {
   try {
     const userId = await getAuthUserId();
@@ -25,10 +25,11 @@ export async function GET() {
         posts.created_at, 
         users.name as author_name,
         COUNT(DISTINCT likes.id)::int as like_count,
-        EXISTS(
-          SELECT 1 FROM likes 
+        (
+          SELECT reaction_type FROM likes 
           WHERE likes.post_id = posts.id AND likes.user_id = ${currentUserId}
-        ) as has_liked
+          LIMIT 1
+        ) as user_reaction
       FROM posts 
       JOIN users ON posts.user_id = users.id 
       LEFT JOIN likes ON posts.id = likes.post_id

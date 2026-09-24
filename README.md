@@ -55,3 +55,10 @@ CREATE TABLE IF NOT EXISTS likes (
   CONSTRAINT unique_user_post_like UNIQUE (post_id, user_id)
 );
 ```
+
+
+```bash
+ALTER TABLE likes 
+ADD COLUMN IF NOT EXISTS reaction_type VARCHAR(20) NOT NULL DEFAULT 'like';
+```
+

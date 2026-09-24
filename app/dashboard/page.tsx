@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Post, Comment, UserWithFriendStatus, PostVisibility } from './types';
+import { User, Post, Comment, UserWithFriendStatus, PostVisibility, ReactionType } from './types';
 import DashboardHeader from './components/DashboardHeader';
 import PostForm from './components/PostForm';
 import PostItem from './components/PostItem';
@@ -15,7 +15,6 @@ export default function DashboardPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [users, setUsers] = useState<UserWithFriendStatus[]>([]);
 
-  // Form State
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [visibility, setVisibility] = useState<PostVisibility>('everyone');
@@ -46,7 +45,6 @@ export default function DashboardPage() {
     loadData();
   }, []);
 
-  // Post Actions
   const handleSavePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !content) return;
@@ -78,17 +76,16 @@ export default function DashboardPage() {
     loadData();
   };
 
-  // Like Action
-  const handleToggleLike = async (postId: number) => {
+  // Toggle Reaction Handler
+  const handleToggleReaction = async (postId: number, reactionType: ReactionType) => {
     await fetch('/api/likes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ postId }),
+      body: JSON.stringify({ postId, reactionType }),
     });
     loadData();
   };
 
-  // Comment Actions
   const handleAddComment = async (postId: number, contentText: string) => {
     await fetch('/api/comments', {
       method: 'POST',
@@ -113,7 +110,6 @@ export default function DashboardPage() {
     loadData();
   };
 
-  // Friend Actions
   const handleSendFriendRequest = async (receiverId: number) => {
     await fetch('/api/friends', {
       method: 'POST',
@@ -188,7 +184,7 @@ export default function DashboardPage() {
                   setVisibility(p.visibility || 'everyone');
                 }}
                 onDeletePost={handleDeletePost}
-                onToggleLike={handleToggleLike}
+                onToggleReaction={handleToggleReaction}
                 onAddComment={handleAddComment}
                 onUpdateComment={handleUpdateComment}
                 onDeleteComment={handleDeleteComment}

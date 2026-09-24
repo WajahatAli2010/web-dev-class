@@ -1,7 +1,9 @@
 'use client';
 
-import { Post, Comment, PostVisibility } from '../types';
+import { useState } from 'react';
+import { Post, Comment, ReactionUser, PostVisibility, ReactionType, REACTION_EMOJIS } from '../types';
 import CommentSection from './CommentSection';
+import LikesModal from './LikesModal';
 
 interface Props {
   post: Post;
@@ -9,7 +11,7 @@ interface Props {
   comments: Comment[];
   onStartEdit: (post: Post) => void;
   onDeletePost: (postId: number) => void;
-  onToggleLike: (postId: number) => void;
+  onToggleReaction: (postId: number, reactionType: ReactionType) => void;
   onAddComment: (postId: number, content: string) => void;
   onUpdateComment: (commentId: number, content: string) => void;
   onDeleteComment: (commentId: number) => void;
@@ -21,22 +23,47 @@ const visibilityLabels: Record<PostVisibility, string> = {
   no_one: '🔒 Only Me',
 };
 
+const reactionKeys: ReactionType[] = ['like', 'love', 'haha', 'wow', 'sad', 'angry'];
+
 export default function PostItem({
   post,
   currentUserId,
   comments,
   onStartEdit,
   onDeletePost,
-  onToggleLike,
+  onToggleReaction,
   onAddComment,
   onUpdateComment,
   onDeleteComment,
 }: Props) {
+  const [showPicker, setShowPicker] = useState(false);
+  const [isLikesModalOpen, setIsLikesModalOpen] = useState(false);
+  const [likers, setLikers] = useState<ReactionUser[]>([]);
+  const [isLoadingLikers, setIsLoadingLikers] = useState(false);
+
   const isPostOwner = post.user_id === currentUserId;
+  const currentReaction = post.user_reaction ? REACTION_EMOJIS[post.user_reaction] : null;
+
+  const handleOpenLikesModal = async () => {
+    if (post.like_count === 0) return;
+    setIsLikesModalOpen(true);
+    setIsLoadingLikers(true);
+
+    try {
+      const res = await fetch(`/api/likes?postId=${post.id}`);
+      if (res.ok) {
+        setLikers(await res.json());
+      }
+    } catch {
+      console.error('Failed to fetch reactions list');
+    } finally {
+      setIsLoadingLikers(false);
+    }
+  };
 
   return (
     <div className="p-4 border rounded-lg shadow-sm ">
-      {/* Post Header */}
+      {/* Header */}
       <div className="flex justify-between items-start mb-2">
         <div>
           <h3 className="font-bold text-lg">{post.title}</h3>
@@ -64,23 +91,59 @@ export default function PostItem({
       {/* Body */}
       <p className="text-gray-700 mb-4 whitespace-pre-wrap">{post.content}</p>
 
-      {/* Action Bar (Like Button) */}
-      <div className="flex items-center gap-4 mb-3 border-t pt-2 border-b pb-2 text-xs">
-        <button
-          onClick={() => onToggleLike(post.id)}
-          className={`flex items-center gap-1.5 font-medium px-2.5 py-1 rounded transition-colors ${
-            post.has_liked
-              ? 'bg-red-50 text-red-600 hover:bg-red-100'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
+      {/* Reaction Bar */}
+      <div className="flex items-center gap-3 mb-3 border-t pt-2 border-b pb-2 text-xs relative">
+        <div
+          className="relative"
+          onMouseEnter={() => setShowPicker(true)}
+          onMouseLeave={() => setShowPicker(false)}
         >
-          <span>{post.has_liked ? '❤️' : '🤍'}</span>
-          <span>{post.like_count || 0} {post.like_count === 1 ? 'Like' : 'Likes'}</span>
-        </button>
+          {/* Reaction Picker Popover */}
+          {showPicker && (
+            <div className="absolute bottom-full left-0 mb-1 flex items-center gap-1 bg-white border shadow-lg rounded-full px-2 py-1 z-20 animate-in fade-in slide-in-from-bottom-2 duration-150">
+              {reactionKeys.map((key) => (
+                <button
+                  key={key}
+                  onClick={() => {
+                    onToggleReaction(post.id, key);
+                    setShowPicker(false);
+                  }}
+                  title={REACTION_EMOJIS[key].label}
+                  className="text-xl hover:scale-125 transition-transform duration-100 p-1"
+                >
+                  {REACTION_EMOJIS[key].emoji}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Main Reaction Button */}
+          <button
+            onClick={() => onToggleReaction(post.id, post.user_reaction || 'like')}
+            className={`flex items-center gap-1.5 font-medium px-2.5 py-1 rounded transition-colors ${
+              currentReaction ? 'bg-gray-100' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <span className="text-base">{currentReaction ? currentReaction.emoji : '👍'}</span>
+            <span className={currentReaction ? currentReaction.color : ''}>
+              {currentReaction ? currentReaction.label : 'Like'}
+            </span>
+          </button>
+        </div>
+
+        {/* Reaction Count Trigger */}
+        {post.like_count > 0 && (
+          <button
+            onClick={handleOpenLikesModal}
+            className="text-gray-500 hover:text-gray-800 hover:underline font-medium"
+          >
+            {post.like_count} {post.like_count === 1 ? 'reaction' : 'reactions'}
+          </button>
+        )}
       </div>
 
       {/* Embedded Comments */}
-      <CommentSection 
+      <CommentSection
         postId={post.id}
         postOwnerId={post.user_id}
         comments={comments}
@@ -88,6 +151,14 @@ export default function PostItem({
         onAddComment={onAddComment}
         onUpdateComment={onUpdateComment}
         onDeleteComment={onDeleteComment}
+      />
+
+      {/* Likes Modal */}
+      <LikesModal
+        isOpen={isLikesModalOpen}
+        onClose={() => setIsLikesModalOpen(false)}
+        likers={likers}
+        isLoading={isLoadingLikers}
       />
     </div>
   );
