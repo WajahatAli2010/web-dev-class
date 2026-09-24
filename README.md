@@ -66,3 +66,14 @@ ADD COLUMN IF NOT EXISTS reaction_type VARCHAR(20) NOT NULL DEFAULT 'like';
 ```bash
 git pull origin main
 ```
+
+```bash
+CREATE TABLE IF NOT EXISTS comment_reactions (
+  id SERIAL PRIMARY KEY,
+  comment_id INT NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reaction_type VARCHAR(20) NOT NULL DEFAULT 'like',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(comment_id, user_id)
+);
+```
