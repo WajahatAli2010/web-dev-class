@@ -1,79 +1,77 @@
-Create SQL Table using following SQL Script:
-```bash
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    username VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL
-);
-```
+# Getting Started & Setup Guide
 
+Follow these steps to set up, sync, and configure the project and database locally.
 
-```bash
-CREATE TABLE IF NOT EXISTS posts (
-  id SERIAL PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  content TEXT NOT NULL,
-  user_id INT REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+---
 
-```
+## 1. Sync & Pull Latest Changes
 
-```bash
-CREATE TABLE IF NOT EXISTS comments (
-  id SERIAL PRIMARY KEY,
-  post_id INT REFERENCES posts(id) ON DELETE CASCADE,
-  user_id INT REFERENCES users(id) ON DELETE CASCADE,
-  content TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-
-```bash
-CREATE TABLE IF NOT EXISTS friendships (
-  id SERIAL PRIMARY KEY,
-  sender_id INT REFERENCES users(id) ON DELETE CASCADE,
-  receiver_id INT REFERENCES users(id) ON DELETE CASCADE,
-  status VARCHAR(20) NOT NULL DEFAULT 'pending',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT unique_friendship UNIQUE (sender_id, receiver_id)
-);
-
-ALTER TABLE posts 
-ADD COLUMN IF NOT EXISTS visibility VARCHAR(20) NOT NULL DEFAULT 'everyone';
-```
-
-
-```bash
-CREATE TABLE IF NOT EXISTS likes (
-  id SERIAL PRIMARY KEY,
-  post_id INT REFERENCES posts(id) ON DELETE CASCADE,
-  user_id INT REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT unique_user_post_like UNIQUE (post_id, user_id)
-);
-```
-
-
-```bash
-ALTER TABLE likes 
-ADD COLUMN IF NOT EXISTS reaction_type VARCHAR(20) NOT NULL DEFAULT 'like';
-```
-
+If you are working from a fork, sync your repository with the original upstream repository on GitHub first. Then, pull the latest updates to your local terminal:
 
 ```bash
 git pull origin main
 ```
 
+---
+
+## 2. Install Dependencies
+
+If this is a fresh clone or you just pulled new changes, install the project dependencies:
+
 ```bash
-CREATE TABLE IF NOT EXISTS comment_reactions (
-  id SERIAL PRIMARY KEY,
-  comment_id INT NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
-  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  reaction_type VARCHAR(20) NOT NULL DEFAULT 'like',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(comment_id, user_id)
-);
+npm install
 ```
+
+> **Note on `tsx`:** We use **`tsx`** (TypeScript Execute) to run `.ts` scripts directly in Node.js without needing to compile them to JavaScript first. It powers the `npm run db:init` command to run `/scripts/init-db.ts`. 
+> 
+> If `tsx` is not installed yet, add it as a dev dependency:
+> ```bash
+> npm install -D tsx
+> ```
+
+---
+
+## 3. Environment Configuration
+
+Create a `.env.local` file in the root directory of your project to connect your application to Neon Postgres:
+
+```bash
+# Create .env.local in your project root
+DATABASE_URL=" "
+```
+
+Replace the inside of " "  with your actual connection string from the **Neon Console**.
+
+---
+
+## 4. Database Setup & Management
+
+You can manage your database schema directly from VS Code without needing to run manual SQL queries in the Neon UI.
+
+### Initializing the Database
+Run the initialization script to automatically create all required tables:
+
+```bash
+npm run db:init
+```
+
+### Adding New Tables or Modifying Schema
+Whenever you want to add a new table or modify an existing one:
+
+1. Open `/scripts/init-db.ts` in VS Code.
+2. Add your new SQL table definition inside the `initDB()` function.
+3. Save the file and run:
+   ```bash
+   npm run db:init
+   ```
+
+---
+
+## ⚡ Quick Command Reference
+
+| Action | Command |
+| :--- | :--- |
+| **Pull updates** | `git pull origin main` |
+| **Install dependencies** | `npm install` |
+| **Initialize / Update DB** | `npm run db:init` |
+| **Start Dev Server** | `npm run dev` |
