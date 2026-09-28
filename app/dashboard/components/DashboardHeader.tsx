@@ -1,5 +1,4 @@
-'use client';
-
+import Link from 'next/link';
 import { User } from '../types';
 
 interface Props {
@@ -9,17 +8,35 @@ interface Props {
 
 export default function DashboardHeader({ user, onLogout }: Props) {
   return (
-    <div className="flex justify-between items-center mb-6 pb-4 border-b">
-      <div>
-        <h1 className="text-2xl font-bold">Community Feed</h1>
-        <p className="text-sm text-gray-500">Logged in as: {user.name}</p>
+    <header className="flex justify-between items-center mb-6  p-4 border rounded-xl shadow-sm">
+      <Link href="/dashboard" className="text-xl font-extrabold text-blue-600">
+        SocialApp
+      </Link>
+
+      <div className="flex items-center gap-4">
+        <Link
+          href={`/profile/${user.username}`}
+          className="flex items-center gap-2 hover:opacity-80 transition"
+        >
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 text-sm overflow-hidden">
+            {user.avatar_url ? (
+              <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+            ) : (
+              user.name.charAt(0).toUpperCase()
+            )}
+          </div>
+          <span className="font-semibold text-sm hidden sm:inline">
+            {user.name}
+          </span>
+        </Link>
+
+        <button
+          onClick={onLogout}
+          className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 transition font-medium"
+        >
+          Logout
+        </button>
       </div>
-      <button 
-        onClick={onLogout}
-        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded text-sm"
-      >
-        Logout
-      </button>
-    </div>
+    </header>
   );
 }

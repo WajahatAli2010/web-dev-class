@@ -22,9 +22,15 @@ async function initDB() {
         name VARCHAR(255) NOT NULL,
         username VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
+        bio TEXT DEFAULT '',
+        avatar_url TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
+
+    // Ensure bio & avatar_url exist on databases created prior to profile feature
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT '';`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT '';`;
 
     // 2. Friendships Table
     await sql`
@@ -60,7 +66,6 @@ async function initDB() {
         CONSTRAINT unique_user_post_like UNIQUE (post_id, user_id)
       );
     `;
-    
 
     // 5. Comments Table
     await sql`
@@ -75,14 +80,14 @@ async function initDB() {
 
     // 6. Comments Reaction Table
     await sql`
-    CREATE TABLE IF NOT EXISTS comment_reactions (
+      CREATE TABLE IF NOT EXISTS comment_reactions (
         id SERIAL PRIMARY KEY,
         comment_id INT NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         reaction_type VARCHAR(20) NOT NULL DEFAULT 'like',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(comment_id, user_id)
-        );
+      );
     `;
 
     console.log('✅ Database schema initialized successfully!');

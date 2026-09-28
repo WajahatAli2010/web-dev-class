@@ -13,6 +13,18 @@ export interface User {
   id: number;
   name: string;
   username: string;
+  bio?: string;
+  avatar_url?: string;
+  created_at?: string;
+}
+
+export interface ProfileData {
+  user: User;
+  post_count: number;
+  friend_count: number;
+  is_self: boolean;
+  friendship_status: FriendshipStatus;
+  friendship_id?: number;
 }
 
 export interface ReactionUser extends User {
