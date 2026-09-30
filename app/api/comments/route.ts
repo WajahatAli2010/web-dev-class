@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import sql from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 async function getAuthUserId() {
   const cookieStore = await cookies();
@@ -55,6 +56,17 @@ export async function POST(request: Request) {
       INSERT INTO comments (post_id, user_id, content) 
       VALUES (${postId}, ${Number(userId)}, ${content})
     `;
+    const [post] = await sql`
+      SELECT user_id FROM posts WHERE id = ${Number(postId)}
+    `;
+    if (post) {
+      await createNotification({
+        userId: Number(post.user_id),
+        actorId: Number(userId),
+        type: 'comment',
+        entityId: Number(postId),
+      });
+    }
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create comment' }, { status: 500 });

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import sql from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 async function getAuthUserId() {
   const cookieStore = await cookies();
@@ -70,6 +71,11 @@ export async function POST(request: Request) {
       INSERT INTO friendships (sender_id, receiver_id, status)
       VALUES (${Number(userId)}, ${Number(receiverId)}, 'pending')
     `;
+    await createNotification({
+      userId: Number(receiverId),
+      actorId: Number(userId),
+      type: 'friend_request',
+    });
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
@@ -85,11 +91,25 @@ export async function PUT(request: Request) {
 
     const { friendshipId } = await request.json();
 
-    await sql`
+    const [friendship] = await sql`
+      SELECT sender_id FROM friendships
+      WHERE id = ${Number(friendshipId)} AND receiver_id = ${Number(userId)}
+    `;
+
+    const acceptedFriendship = await sql`
       UPDATE friendships 
       SET status = 'accepted'
       WHERE id = ${Number(friendshipId)} AND receiver_id = ${Number(userId)}
+      RETURNING id
     `;
+    if (friendship && acceptedFriendship.length > 0) {
+      await createNotification({
+        userId: Number(friendship.sender_id),
+        actorId: Number(userId),
+        type: 'friend_accept',
+        entityId: Number(friendshipId),
+      });
+    }
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

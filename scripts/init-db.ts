@@ -90,6 +90,18 @@ async function initDB() {
       );
     `;
 
+    // 7. Notifications Table
+    await sql`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        actor_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type VARCHAR(50) NOT NULL, -- 'friend_request' | 'friend_accept' | 'like' | 'comment'
+        entity_id INT, -- post_id or friendship_id
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
     console.log('✅ Database schema initialized successfully!');
   } catch (error) {
     console.error('❌ Failed to initialize database:', error);

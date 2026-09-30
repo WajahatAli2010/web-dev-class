@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import sql from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 async function getAuthUserId() {
   const cookieStore = await cookies();
@@ -46,6 +47,17 @@ export async function POST(request: Request) {
         INSERT INTO comment_reactions (comment_id, user_id, reaction_type) 
         VALUES (${commentId}, ${currentUserId}, ${reactionType})
       `;
+      const [comment] = await sql`
+        SELECT user_id FROM comments WHERE id = ${Number(commentId)}
+      `;
+      if (comment) {
+        await createNotification({
+          userId: Number(comment.user_id),
+          actorId: currentUserId,
+          type: 'comment_like',
+          entityId: Number(commentId),
+        });
+      }
       return NextResponse.json({ action: 'added', reactionType }, { status: 201 });
     }
   } catch (error) {
