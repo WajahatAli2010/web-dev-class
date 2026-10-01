@@ -53,6 +53,7 @@ export interface Post {
   visibility: PostVisibility;
   like_count: number;
   user_reaction: ReactionType | null;
+  is_bookmarked?: boolean;
 }
 
 export interface Comment {

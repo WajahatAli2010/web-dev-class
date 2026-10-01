@@ -2,48 +2,59 @@
 
 import { ReactionUser, REACTION_EMOJIS } from '../types';
 
-interface Props {
+interface LikesModalProps {
   isOpen: boolean;
   onClose: () => void;
   likers: ReactionUser[];
   isLoading: boolean;
 }
 
-export default function LikesModal({ isOpen, onClose, likers, isLoading }: Props) {
+export default function LikesModal({
+  isOpen,
+  onClose,
+  likers,
+  isLoading,
+}: LikesModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-150">
-        <div className="flex justify-between items-center px-4 py-3 border-b bg-gray-50">
-          <h3 className="font-semibold text-gray-800 text-sm">Reactions</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
+      <div className="bg-white border-2 rounded-xl p-4 w-full max-w-sm space-y-4 shadow-sm">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b pb-2">
+          <h3 className="font-bold text-sm">Reactions</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 font-bold text-lg leading-none"
+            className="border px-2 py-0.5 rounded text-xs font-medium"
           >
-            &times;
+            Close
           </button>
         </div>
 
-        <div className="max-h-80 overflow-y-auto p-4 space-y-3">
-          {isLoading ? (
-            <p className="text-xs text-gray-500 text-center py-4">Loading reactions...</p>
-          ) : likers.length === 0 ? (
-            <p className="text-xs text-gray-500 text-center py-4">No reactions yet.</p>
-          ) : (
-            likers.map((user) => (
-              <div key={user.id} className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                  <p className="text-xs text-gray-500">@{user.username}</p>
+        {/* Content */}
+        {isLoading ? (
+          <p className="text-xs text-center py-4">Loading reactions...</p>
+        ) : likers.length === 0 ? (
+          <p className="text-xs text-center py-4">No reactions yet.</p>
+        ) : (
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+            {likers.map((user) => {
+              const reaction = REACTION_EMOJIS[user.reaction_type];
+              return (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between border rounded p-2 text-xs"
+                >
+                  <span className="font-medium">{user.name}</span>
+                  <span className="border px-1.5 py-0.5 rounded text-xs flex items-center gap-1">
+                    <span>{reaction?.emoji || '👍'}</span>
+                    <span className="capitalize">{user.reaction_type}</span>
+                  </span>
                 </div>
-                <span className="text-xl">
-                  {REACTION_EMOJIS[user.reaction_type]?.emoji || '👍'}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

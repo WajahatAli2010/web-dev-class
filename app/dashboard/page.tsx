@@ -86,6 +86,16 @@ export default function DashboardPage() {
     loadData();
   };
 
+  // Toggle Bookmark Handler
+  const handleToggleBookmark = async (postId: number) => {
+    await fetch('/api/bookmarks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ postId }),
+    });
+    loadData();
+  };
+
   const handleAddComment = async (postId: number, contentText: string) => {
     await fetch('/api/comments', {
       method: 'POST',
@@ -177,6 +187,8 @@ export default function DashboardPage() {
                 post={post}
                 currentUserId={currentUser.id}
                 comments={comments.filter((c) => c.post_id === post.id)}
+                isBookmarked={post.is_bookmarked}
+                onToggleBookmark={handleToggleBookmark}
                 onStartEdit={(p) => {
                   setEditingPostId(p.id);
                   setTitle(p.title);

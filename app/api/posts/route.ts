@@ -7,7 +7,7 @@ async function getAuthUserId() {
   return cookieStore.get('userId')?.value;
 }
 
-// GET: Fetch posts with visibility logic, total reaction count, and user reaction type
+// GET: Fetch posts with visibility logic, total reaction count, user reaction type, and bookmark status
 export async function GET() {
   try {
     const userId = await getAuthUserId();
@@ -29,7 +29,11 @@ export async function GET() {
           SELECT reaction_type FROM likes 
           WHERE likes.post_id = posts.id AND likes.user_id = ${currentUserId}
           LIMIT 1
-        ) as user_reaction
+        ) as user_reaction,
+        EXISTS (
+          SELECT 1 FROM bookmarks 
+          WHERE bookmarks.post_id = posts.id AND bookmarks.user_id = ${currentUserId}
+        ) as is_bookmarked
       FROM posts 
       JOIN users ON posts.user_id = users.id 
       LEFT JOIN likes ON posts.id = likes.post_id

@@ -9,9 +9,11 @@ interface Props {
   post: Post;
   currentUserId: number;
   comments: Comment[];
+  isBookmarked?: boolean;
   onStartEdit: (post: Post) => void;
   onDeletePost: (postId: number) => void;
   onToggleReaction: (postId: number, reactionType: ReactionType) => void;
+  onToggleBookmark?: (postId: number) => void;
   onAddComment: (postId: number, content: string) => void;
   onUpdateComment: (commentId: number, content: string) => void;
   onDeleteComment: (commentId: number) => void;
@@ -29,9 +31,11 @@ export default function PostItem({
   post,
   currentUserId,
   comments,
+  isBookmarked = false,
   onStartEdit,
   onDeletePost,
   onToggleReaction,
+  onToggleBookmark,
   onAddComment,
   onUpdateComment,
   onDeleteComment,
@@ -40,6 +44,7 @@ export default function PostItem({
   const [isLikesModalOpen, setIsLikesModalOpen] = useState(false);
   const [likers, setLikers] = useState<ReactionUser[]>([]);
   const [isLoadingLikers, setIsLoadingLikers] = useState(false);
+  const [bookmarked, setBookmarked] = useState(isBookmarked);
 
   const isPostOwner = post.user_id === currentUserId;
   const currentReaction = post.user_reaction ? REACTION_EMOJIS[post.user_reaction] : null;
@@ -61,16 +66,23 @@ export default function PostItem({
     }
   };
 
+  const handleBookmarkClick = () => {
+    setBookmarked(!bookmarked);
+    if (onToggleBookmark) {
+      onToggleBookmark(post.id);
+    }
+  };
+
   return (
-    <div className="p-4 border rounded-lg shadow-sm ">
+    <div className="p-4 border rounded-xl space-y-3">
       {/* Header */}
-      <div className="flex justify-between items-start mb-2">
+      <div className="flex justify-between items-start">
         <div>
           <h3 className="font-bold text-lg">{post.title}</h3>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs">
             <span>By {post.author_name}</span>
             <span>•</span>
-            <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[11px]">
+            <span className="border px-1.5 py-0.5 rounded text-[11px]">
               {visibilityLabels[post.visibility || 'everyone']}
             </span>
           </div>
@@ -78,10 +90,16 @@ export default function PostItem({
 
         {isPostOwner && (
           <div className="flex gap-2">
-            <button onClick={() => onStartEdit(post)} className="text-xs text-blue-600 hover:underline">
+            <button
+              onClick={() => onStartEdit(post)}
+              className="border px-2 py-0.5 rounded text-xs font-medium"
+            >
               Edit
             </button>
-            <button onClick={() => onDeletePost(post.id)} className="text-xs text-red-600 hover:underline">
+            <button
+              onClick={() => onDeletePost(post.id)}
+              className="border px-2 py-0.5 rounded text-xs font-medium"
+            >
               Delete
             </button>
           </div>
@@ -89,55 +107,67 @@ export default function PostItem({
       </div>
 
       {/* Body */}
-      <p className="text-gray-700 mb-4 whitespace-pre-wrap">{post.content}</p>
+      <p className="whitespace-pre-wrap text-sm">{post.content}</p>
 
-      {/* Reaction Bar */}
-      <div className="flex items-center gap-3 mb-3 border-t pt-2 border-b pb-2 text-xs relative">
-        <div
-          className="relative"
-          onMouseEnter={() => setShowPicker(true)}
-          onMouseLeave={() => setShowPicker(false)}
-        >
-          {/* Reaction Picker Popover */}
-          {showPicker && (
-            <div className="absolute bottom-full left-0 flex items-center gap-1 bg-white border shadow-lg rounded-full px-2 py-1 z-20 animate-in fade-in slide-in-from-bottom-2 duration-150">
-              {reactionKeys.map((key) => (
-                <button
-                  key={key}
-                  onClick={() => {
-                    onToggleReaction(post.id, key);
-                    setShowPicker(false);
-                  }}
-                  title={REACTION_EMOJIS[key].label}
-                  className="text-xl hover:scale-125 transition-transform duration-100 p-1"
-                >
-                  {REACTION_EMOJIS[key].emoji}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Main Reaction Button */}
-          <button
-            onClick={() => onToggleReaction(post.id, post.user_reaction || 'like')}
-            className={`flex items-center gap-1.5 font-medium px-2.5 py-1 rounded transition-colors ${
-              currentReaction ? 'bg-gray-100' : 'text-gray-600 hover:bg-gray-100'
-            }`}
+      {/* Reaction & Actions Bar */}
+      <div className="flex items-center justify-between border-t border-b py-2 text-xs relative">
+        <div className="flex items-center gap-3">
+          <div
+            className="relative"
+            onMouseEnter={() => setShowPicker(true)}
+            onMouseLeave={() => setShowPicker(false)}
           >
-            <span className="text-base">{currentReaction ? currentReaction.emoji : '👍'}</span>
-            <span className={currentReaction ? currentReaction.color : ''}>
-              {currentReaction ? currentReaction.label : 'Like'}
-            </span>
-          </button>
+            {/* Reaction Picker Popover */}
+            {showPicker && (
+              <div className="absolute bottom-full left-0 flex items-center gap-1 border rounded-full bg-white px-2 py-1 z-20">
+                {reactionKeys.map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      onToggleReaction(post.id, key);
+                      setShowPicker(false);
+                    }}
+                    title={REACTION_EMOJIS[key].label}
+                    className="text-xl hover:scale-125 transition-transform duration-100 p-1"
+                  >
+                    {REACTION_EMOJIS[key].emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Main Reaction Button */}
+            <button
+              onClick={() => onToggleReaction(post.id, post.user_reaction || 'like')}
+              className={`flex items-center gap-1.5 font-medium border px-2.5 py-1 rounded transition-colors ${
+                currentReaction ? 'border-2' : ''
+              }`}
+            >
+              <span className="text-base">{currentReaction ? currentReaction.emoji : '👍'}</span>
+              <span>{currentReaction ? currentReaction.label : 'Like'}</span>
+            </button>
+          </div>
+
+          {/* Reaction Count Trigger */}
+          {post.like_count > 0 && (
+            <button
+              onClick={handleOpenLikesModal}
+              className="font-medium hover:underline"
+            >
+              {post.like_count} {post.like_count === 1 ? 'reaction' : 'reactions'}
+            </button>
+          )}
         </div>
 
-        {/* Reaction Count Trigger */}
-        {post.like_count > 0 && (
+        {/* Bookmark Button */}
+        {onToggleBookmark && (
           <button
-            onClick={handleOpenLikesModal}
-            className="text-gray-500 hover:text-gray-800 hover:underline font-medium"
+            onClick={handleBookmarkClick}
+            className={`border px-2.5 py-1 rounded flex items-center gap-1.5 font-medium transition ${
+              bookmarked ? 'border-2' : ''
+            }`}
           >
-            {post.like_count} {post.like_count === 1 ? 'reaction' : 'reactions'}
+            <span>{bookmarked ? '🔖 Saved' : '🔖 Save'}</span>
           </button>
         )}
       </div>

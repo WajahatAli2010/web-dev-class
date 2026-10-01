@@ -15,8 +15,7 @@ export default function DashboardHeader({ user, onLogout }: Props) {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          const unread = data.filter((n) => !n.is_read).length;
-          setUnreadCount(unread);
+          setUnreadCount(data.filter((n) => !n.is_read).length);
         }
       });
   }, []);
@@ -29,6 +28,9 @@ export default function DashboardHeader({ user, onLogout }: Props) {
         </Link>
         <Link href="/explore" className="text-sm font-semibold hover:underline flex items-center gap-1">
           🔍 Explore
+        </Link>
+        <Link href="/bookmarks" className="text-sm font-semibold hover:underline flex items-center gap-1">
+          🔖 Saved
         </Link>
         <Link
           href="/notifications"
@@ -46,7 +48,7 @@ export default function DashboardHeader({ user, onLogout }: Props) {
       <div className="flex items-center gap-4">
         <Link
           href={`/profile/${user.username}`}
-          className="flex items-center gap-2 hover:opacity-80 transition"
+          className="flex items-center gap-2 transition"
         >
           <div className="w-8 h-8 rounded-full border flex items-center justify-center font-bold text-sm overflow-hidden">
             {user.avatar_url ? (
@@ -60,7 +62,7 @@ export default function DashboardHeader({ user, onLogout }: Props) {
 
         <button
           onClick={onLogout}
-          className="text-xs border px-3 py-1.5 rounded-lg font-medium hover:opacity-80 transition"
+          className="text-xs border px-3 py-1.5 rounded-lg font-medium transition"
         >
           Logout
         </button>

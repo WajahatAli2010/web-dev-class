@@ -96,10 +96,21 @@ async function initDB() {
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         actor_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        type VARCHAR(50) NOT NULL, -- 'friend_request' | 'friend_accept' | 'like' | 'comment'
-        entity_id INT, -- post_id or friendship_id
+        type VARCHAR(50) NOT NULL,
+        entity_id INT,
         is_read BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
+    // 8. Bookmarks Table
+    await sql`
+      CREATE TABLE IF NOT EXISTS bookmarks (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        post_id INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, post_id)
       );
     `;
     console.log('✅ Database schema initialized successfully!');
